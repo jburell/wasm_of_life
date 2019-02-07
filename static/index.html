@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Wasm of life</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <script>
+        let cachegetUint8Memory = null;
+        function getUint8Memory(memoryBuffer) {
+            if (cachegetUint8Memory === null || cachegetUint8Memory.buffer !== wasm.memory.buffer) {
+                cachegetUint8Memory = new Uint8Array(memoryBuffer);
+            }
+            return cachegetUint8Memory;
+        }
+        let cachedTextDecoder = new TextDecoder('utf-8');
+        function getStringFromWasm(ptr, len, mem) {
+            return cachedTextDecoder.decode(getUint8Memory(mem).subarray(ptr, ptr + len));
+        }
+        fetch('../target/wasm32-unknown-unknown/debug/wasm.wasm')
+            .then(response => response.arrayBuffer())
+            .then(bytes => WebAssembly.instantiate(bytes))
+            .then(results => {
+                console.log('Init rust...');
+                instance = results.instance;
+                console.log(instance.exports);
+                let message = instance.exports.great();
+                console.log(message);
+
+                console.log(getStringFromWasm(message, 5, instance.exports.memory.buffer))
+                
+            }).catch(console.error)
+    </script>
+</body>
+</html>
